@@ -28,13 +28,13 @@ cd health-navigator
 
 cd backend
 python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+venv\Scripts\activate  # MacOS: source venv/bin/activate
 pip install -r requirements.txt
 ```
 
 ### 3. Set environment variables
 
-Edit .env and add your GEMINI_API_KEY
+Create .env and add your GEMINI_API_KEY
 
 ### 4. Run locally
 
