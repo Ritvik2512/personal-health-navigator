@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Health Navigator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2330;
+    --border: #30363d;
+    --accent: #3fb950;
+    --accent-dim: rgba(63,185,80,0.12);
+    --accent-glow: rgba(63,185,80,0.25);
+    --danger: #f85149;
+    --danger-bg: rgba(248,81,73,0.1);
+    --text: #e6edf3;
+    --text-muted: #7d8590;
+    --text-dim: #484f58;
+    --user-bubble: #1f6feb;
+    --user-bubble-dim: rgba(31,111,235,0.15);
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Header */
+  header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  .logo-mark {
+    width: 36px; height: 36px;
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+
+  .header-text h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px;
+    font-weight: 400;
+    letter-spacing: -0.3px;
+    color: var(--text);
+  }
+
+  .header-text p {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 300;
+  }
+
+  .status-dot {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent-glow);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* Emergency Banner */
+  #emergency-banner {
+    display: none;
+    background: var(--danger-bg);
+    border-bottom: 1px solid var(--danger);
+    padding: 12px 24px;
+    color: var(--danger);
+    font-size: 14px;
+    font-weight: 500;
+    text-align: center;
+    animation: slideDown 0.3s ease;
+  }
+
+  @keyframes slideDown {
+    from { transform: translateY(-100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  #emergency-banner.visible { display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+  /* Chat area */
+  #chat-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    scroll-behavior: smooth;
+  }
+
+  #chat-container::-webkit-scrollbar { width: 4px; }
+  #chat-container::-webkit-scrollbar-track { background: transparent; }
+  #chat-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* Welcome state */
+  #welcome {
+    margin: auto;
+    text-align: center;
+    max-width: 420px;
+    padding: 40px 20px;
+    animation: fadeIn 0.5s ease;
+  }
+
+  #welcome h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    font-weight: 400;
+    color: var(--text);
+    margin-bottom: 8px;
+    line-height: 1.2;
+  }
+
+  #welcome h2 em {
+    color: var(--accent);
+    font-style: italic;
+  }
+
+  #welcome p {
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 24px;
+    font-weight: 300;
+  }
+
+  .suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  .suggestion-chip {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 8px 14px;
+    font-size: 13px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .suggestion-chip:hover {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Messages */
+  .message {
+    display: flex;
+    gap: 12px;
+    max-width: 720px;
+    animation: fadeIn 0.25s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .message.user {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+  }
+
+  .message.assistant { align-self: flex-start; }
+
+  .avatar {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .message.user .avatar {
+    background: var(--user-bubble-dim);
+    border: 1px solid rgba(31,111,235,0.3);
+  }
+
+  .message.assistant .avatar {
+    background: var(--accent-dim);
+    border: 1px solid rgba(63,185,80,0.3);
+  }
+
+  .bubble {
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    line-height: 1.65;
+    max-width: calc(100% - 44px);
+  }
+
+  .message.user .bubble {
+    background: var(--user-bubble);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+
+  .message.assistant .bubble {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-bottom-left-radius: 4px;
+  }
+
+  /* Tool indicator */
+  .tool-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  /* Typing indicator */
+  .typing-bubble {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    border-bottom-left-radius: 4px;
+    padding: 14px 18px;
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .typing-dot {
+    width: 6px; height: 6px;
+    background: var(--text-muted);
+    border-radius: 50%;
+    animation: typingBounce 1.2s infinite;
+  }
+
+  .typing-dot:nth-child(2) { animation-delay: 0.15s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+
+  @keyframes typingBounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-4px); opacity: 1; }
+  }
+
+  /* Disclaimer */
+  .disclaimer {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-dim);
+    padding: 0 24px;
+    flex-shrink: 0;
+    padding-bottom: 8px;
+  }
+
+  /* Input area */
+  .input-area {
+    padding: 12px 16px 16px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 10px 12px;
+    transition: border-color 0.15s ease;
+  }
+
+  .input-row:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+
+  #user-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 300;
+    resize: none;
+    min-height: 22px;
+    max-height: 140px;
+    line-height: 1.5;
+  }
+
+  #user-input::placeholder { color: var(--text-dim); }
+
+  #send-btn {
+    width: 34px; height: 34px;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+    color: #0d1117;
+    font-size: 16px;
+  }
+
+  #send-btn:hover { background: #56d364; transform: scale(1.05); }
+  #send-btn:disabled { background: var(--border); cursor: not-allowed; transform: none; color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-mark">🩺</div>
+  <div class="header-text">
+    <h1>Health Navigator</h1>
+    <p>Powered by Gemini · Real FDA & MedlinePlus data</p>
+  </div>
+  <div class="status-dot">
+    <div class="dot"></div>
+    <span>Active</span>
+  </div>
+</header>
+
+<div id="emergency-banner">
+  <span>🚨</span>
+  <span id="emergency-text">Emergency detected — please seek immediate medical attention.</span>
+</div>
+
+<div id="chat-container">
+  <div id="welcome">
+    <h2>Your personal<br><em>health guide</em></h2>
+    <p>Ask about symptoms, medications, or health questions. I'll look up real data and help you understand what's going on — and tell you when to see a doctor.</p>
+    <div class="suggestions">
+      <button class="suggestion-chip" onclick="suggest(this)">I have a headache and fever</button>
+      <button class="suggestion-chip" onclick="suggest(this)">What are side effects of ibuprofen?</button>
+      <button class="suggestion-chip" onclick="suggest(this)">My throat has been sore for 3 days</button>
+      <button class="suggestion-chip" onclick="suggest(this)">Is it safe to take melatonin daily?</button>
+      <button class="suggestion-chip" onclick="suggest(this)">What causes lower back pain?</button>
+    </div>
+  </div>
+</div>
+
+<p class="disclaimer">Not a substitute for professional medical advice. Always consult a qualified healthcare provider.</p>
+
+<div class="input-area">
+  <div class="input-row">
+    <textarea
+      id="user-input"
+      placeholder="Describe your symptoms or ask a health question..."
+      rows="1"
+    ></textarea>
+    <button id="send-btn" onclick="sendMessage()" title="Send">
+      ↑
+    </button>
+  </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
