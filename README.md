@@ -34,7 +34,11 @@ pip install -r requirements.txt
 
 ### 3. Set environment variables
 
-Create .env and add your GEMINI_API_KEY
+Create .env file in the root directory (personal-health-navigator/):
+
+```
+GEMINI_API_KEY=your_api_key
+```
 
 ### 4. Run locally
 
