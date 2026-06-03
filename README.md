@@ -93,8 +93,8 @@ health-navigator/
 
 ---
 
-## ⚠️ Disclaimer
+## Disclaimer
 
 This tool is for **informational purposes only**. It is not a substitute for professional medical advice, diagnosis, or treatment. Always consult a qualified healthcare provider for medical concerns.
 
-In an emergency, call **112** (India) or **911** (US) or go to your nearest emergency room.
+In an emergency, call **112** (India) or go to your nearest emergency room.
