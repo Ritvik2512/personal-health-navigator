@@ -1,6 +1,7 @@
 from medical_apis import fetch_drug_info, fetch_condition_info
 
-# --- Tool definitions for Claude function calling ---
+# --- Neutral tool definitions ---
+# No SDK-specific code here. llm_provider.py handles formatting for each model.
 
 TOOL_DEFINITIONS = [
     {
@@ -10,16 +11,13 @@ TOOL_DEFINITIONS = [
             "Use this whenever the user mentions a drug, medication, supplement, or pill by name. "
             "Returns side effects, warnings, interactions, usage info."
         ),
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "drug_name": {
-                    "type": "string",
-                    "description": "The name of the drug or medication (brand or generic)",
-                }
-            },
-            "required": ["drug_name"],
+        "parameters": {
+            "drug_name": {
+                "type": "string",
+                "description": "The name of the drug or medication (brand or generic)",
+            }
         },
+        "required": ["drug_name"],
     },
     {
         "name": "search_condition",
@@ -28,16 +26,13 @@ TOOL_DEFINITIONS = [
             "Use this when the user describes symptoms or asks about a medical condition. "
             "Returns reliable MedlinePlus health information."
         ),
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "symptom_or_condition": {
-                    "type": "string",
-                    "description": "The symptom, condition, or disease to look up",
-                }
-            },
-            "required": ["symptom_or_condition"],
+        "parameters": {
+            "symptom_or_condition": {
+                "type": "string",
+                "description": "The symptom, condition, or disease to look up",
+            }
         },
+        "required": ["symptom_or_condition"],
     },
     {
         "name": "flag_emergency",
@@ -47,24 +42,20 @@ TOOL_DEFINITIONS = [
             "Use for: chest pain, breathing difficulty, stroke symptoms, severe allergic reactions, "
             "uncontrolled bleeding, suicidal thoughts, or any other emergency."
         ),
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "reason": {
-                    "type": "string",
-                    "description": "Brief description of why this is an emergency",
-                }
-            },
-            "required": ["reason"],
+        "parameters": {
+            "reason": {
+                "type": "string",
+                "description": "Brief description of why this is an emergency",
+            }
         },
+        "required": ["reason"],
     },
 ]
 
 
-# --- Tool execution ---
+# --- Tool execution (model-agnostic) ---
 
 async def execute_tool(tool_name: str, tool_args: dict) -> dict:
-    """Execute a tool call and return the result."""
     if tool_name == "lookup_drug":
         return await fetch_drug_info(tool_args.get("drug_name", ""))
 
