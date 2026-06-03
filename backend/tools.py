@@ -1,72 +1,67 @@
-import google.generativeai as genai
 from medical_apis import fetch_drug_info, fetch_condition_info
 
-# tool definitions for Gemini
+# --- Tool definitions for Claude function calling ---
 
 TOOL_DEFINITIONS = [
-    genai.protos.Tool(
-        function_declarations=[
-            genai.protos.FunctionDeclaration(
-                name="lookup_drug",
-                description=(
-                    "Look up real FDA data for a drug or medication. "
-                    "Use this whenever the user mentions a drug, medication, supplement, or pill by name. "
-                    "Returns side effects, warnings, interactions, usage info."
-                ),
-                parameters=genai.protos.Schema(
-                    type=genai.protos.Type.OBJECT,
-                    properties={
-                        "drug_name": genai.protos.Schema(
-                            type=genai.protos.Type.STRING,
-                            description="The name of the drug or medication (brand or generic)",
-                        )
-                    },
-                    required=["drug_name"],
-                ),
-            ),
-            genai.protos.FunctionDeclaration(
-                name="search_condition",
-                description=(
-                    "Search for health information about a symptom, condition, or disease. "
-                    "Use this when the user describes symptoms or asks about a medical condition. "
-                    "Returns reliable MedlinePlus health information."
-                ),
-                parameters=genai.protos.Schema(
-                    type=genai.protos.Type.OBJECT,
-                    properties={
-                        "symptom_or_condition": genai.protos.Schema(
-                            type=genai.protos.Type.STRING,
-                            description="The symptom, condition, or disease to look up",
-                        )
-                    },
-                    required=["symptom_or_condition"],
-                ),
-            ),
-            genai.protos.FunctionDeclaration(
-                name="flag_emergency",
-                description=(
-                    "IMMEDIATELY call this when the user describes potentially life-threatening symptoms. "
-                    "Triggers an emergency alert in the UI. "
-                    "Use for: chest pain, breathing difficulty, stroke symptoms, severe allergic reactions, "
-                    "uncontrolled bleeding, suicidal thoughts, or any other emergency."
-                ),
-                parameters=genai.protos.Schema(
-                    type=genai.protos.Type.OBJECT,
-                    properties={
-                        "reason": genai.protos.Schema(
-                            type=genai.protos.Type.STRING,
-                            description="Brief description of why this is an emergency",
-                        )
-                    },
-                    required=["reason"],
-                ),
-            ),
-        ]
-    )
+    {
+        "name": "lookup_drug",
+        "description": (
+            "Look up real FDA data for a drug or medication. "
+            "Use this whenever the user mentions a drug, medication, supplement, or pill by name. "
+            "Returns side effects, warnings, interactions, usage info."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "drug_name": {
+                    "type": "string",
+                    "description": "The name of the drug or medication (brand or generic)",
+                }
+            },
+            "required": ["drug_name"],
+        },
+    },
+    {
+        "name": "search_condition",
+        "description": (
+            "Search for health information about a symptom, condition, or disease. "
+            "Use this when the user describes symptoms or asks about a medical condition. "
+            "Returns reliable MedlinePlus health information."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "symptom_or_condition": {
+                    "type": "string",
+                    "description": "The symptom, condition, or disease to look up",
+                }
+            },
+            "required": ["symptom_or_condition"],
+        },
+    },
+    {
+        "name": "flag_emergency",
+        "description": (
+            "IMMEDIATELY call this when the user describes potentially life-threatening symptoms. "
+            "Triggers an emergency alert in the UI. "
+            "Use for: chest pain, breathing difficulty, stroke symptoms, severe allergic reactions, "
+            "uncontrolled bleeding, suicidal thoughts, or any other emergency."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "reason": {
+                    "type": "string",
+                    "description": "Brief description of why this is an emergency",
+                }
+            },
+            "required": ["reason"],
+        },
+    },
 ]
 
 
-# tool execution
+# --- Tool execution ---
 
 async def execute_tool(tool_name: str, tool_args: dict) -> dict:
     """Execute a tool call and return the result."""
@@ -77,7 +72,6 @@ async def execute_tool(tool_name: str, tool_args: dict) -> dict:
         return await fetch_condition_info(tool_args.get("symptom_or_condition", ""))
 
     elif tool_name == "flag_emergency":
-        # handled in the response, just returning signal
         return {
             "emergency": True,
             "reason": tool_args.get("reason", "Potentially life-threatening symptoms detected"),

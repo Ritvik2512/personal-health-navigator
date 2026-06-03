@@ -12,11 +12,13 @@ const sendBtn = document.getElementById("send-btn");
 const emergencyBanner = document.getElementById("emergency-banner");
 const emergencyText = document.getElementById("emergency-text");
 
+// Auto-resize textarea
 userInput.addEventListener("input", () => {
   userInput.style.height = "auto";
   userInput.style.height = Math.min(userInput.scrollHeight, 140) + "px";
 });
 
+// Send on Enter (Shift+Enter for newline)
 userInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
@@ -47,7 +49,7 @@ function appendMessage(role, text, toolCalls = []) {
   const bubble = document.createElement("div");
   bubble.className = "bubble";
 
-  // shows the badge for which tool is being used
+  // Show tool usage badges
   if (toolCalls.length > 0) {
     const badges = document.createElement("div");
     toolCalls.forEach(tool => {
@@ -64,7 +66,7 @@ function appendMessage(role, text, toolCalls = []) {
     bubble.appendChild(badges);
   }
 
-  // render text
+  // Render text (basic markdown: bold, newlines)
   const formatted = text
     .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
     .replace(/\n/g, "<br>");
@@ -118,14 +120,14 @@ async function sendMessage() {
   const text = userInput.value.trim();
   if (!text || isLoading) return;
 
-  // clearing input
+  // Clear input
   userInput.value = "";
   userInput.style.height = "auto";
 
-  // show user message
+  // Show user message
   appendMessage("user", text);
 
-  // set loading state
+  // Set loading state
   isLoading = true;
   sendBtn.disabled = true;
   const typingEl = appendTypingIndicator();
@@ -147,14 +149,14 @@ async function sendMessage() {
 
     const data = await response.json();
 
-    // update history
+    // Update history
     conversationHistory = data.updated_history;
 
-    // remove typing, show reply
+    // Remove typing, show reply
     removeTypingIndicator();
     appendMessage("assistant", data.reply, data.tool_calls_made || []);
 
-    // handle emergency
+    // Handle emergency
     if (data.emergency) {
       showEmergency(data.emergency_reason || "Potentially life-threatening symptoms detected");
     }

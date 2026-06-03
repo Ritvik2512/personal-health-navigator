@@ -8,16 +8,13 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from models import ChatRequest, ChatResponse
-from agent import run_agent, init_gemini
-
-init_gemini()
+from agent import run_agent
 
 app = FastAPI(title="Personal Health Navigator", version="1.0.0")
 
-# CORS — allow frontend to talk to backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -26,7 +23,7 @@ app.add_middleware(
 
 @app.get("/health")
 async def health_check():
-    return {"status": "ok", "model": "gemini-3.1-flash-lite"}
+    return {"status": "ok", "model": "claude-sonnet-4-5"}
 
 
 @app.post("/chat", response_model=ChatResponse)
@@ -47,7 +44,7 @@ async def chat(request: ChatRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# Serve frontend static files (for single-server deployment)
+# Serve frontend static files
 frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
 if os.path.exists(frontend_path):
     app.mount("/static", StaticFiles(directory=frontend_path), name="static")

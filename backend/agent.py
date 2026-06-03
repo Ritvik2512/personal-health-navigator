@@ -1,26 +1,18 @@
 import os
 import json
-import google.generativeai as genai
+import anthropic
 from typing import List, Dict, Tuple
 
 from prompts import SYSTEM_PROMPT
 from tools import TOOL_DEFINITIONS, execute_tool
-from memory import maybe_summarize, history_to_gemini_format
+from memory import maybe_summarize, history_to_claude_format
 
 
-def init_gemini():
-    api_key = os.getenv("GEMINI_API_KEY")
+def init_claude():
+    api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
-        raise ValueError("GEMINI_API_KEY not set in environment")
-    genai.configure(api_key=api_key)
-
-
-def get_model() -> genai.GenerativeModel:
-    return genai.GenerativeModel(
-        model_name="gemini-3.1-flash-lite",
-        system_instruction=SYSTEM_PROMPT,
-        tools=TOOL_DEFINITIONS,
-    )
+        raise ValueError("ANTHROPIC_API_KEY not set in environment")
+    return anthropic.Anthropic(api_key=api_key)
 
 
 async def run_agent(
@@ -29,7 +21,7 @@ async def run_agent(
 ) -> Tuple[str, List[Dict], bool, str, List[str]]:
     """
     Main agent loop.
-    
+
     Returns:
         - reply (str): final text response
         - updated_history (list): new history to pass back to client
@@ -37,81 +29,76 @@ async def run_agent(
         - emergency_reason (str): why
         - tool_calls_made (list): names of tools that were called
     """
-    model = get_model()
+    client = init_claude()
 
-    # memory management
-    history = await maybe_summarize(raw_history, model)
-    formatted_history = history_to_gemini_format(history)
+    # Run memory management (summarize if too long)
+    history = await maybe_summarize(raw_history, client)
+    messages = history_to_claude_format(history)
 
-    # start the chat after sharing histroy
-    chat = model.start_chat(history=formatted_history)
+    # Add current user message
+    messages.append({"role": "user", "content": user_message})
 
     emergency = False
     emergency_reason = ""
     tool_calls_made = []
     final_reply = ""
 
-    # agentic loop
-    current_message = user_message
-    max_iterations = 5  # prevents infinite loops
+    # --- Agentic loop: keep going until no more tool calls ---
+    max_iterations = 5
 
     for iteration in range(max_iterations):
-        response = chat.send_message(current_message)
-        candidate = response.candidates[0]
+        response = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=1024,
+            system=SYSTEM_PROMPT,
+            tools=TOOL_DEFINITIONS,
+            messages=messages,
+        )
 
-        # check finish reason
-        finish_reason = candidate.finish_reason.name if candidate.finish_reason else "STOP"
+        # Append assistant response to messages
+        messages.append({"role": "assistant", "content": response.content})
 
-        # collect tool calls from this response
-        tool_calls_in_response = []
-        text_parts = []
-
-        for part in candidate.content.parts:
-            if hasattr(part, "function_call") and part.function_call.name:
-                tool_calls_in_response.append(part.function_call)
-            elif hasattr(part, "text") and part.text:
-                text_parts.append(part.text)
-
-        # if no tool calls, we're done
-        if not tool_calls_in_response:
-            final_reply = "\n".join(text_parts) if text_parts else "I'm not sure how to respond to that."
+        # If Claude is done (no tool calls), extract final text
+        if response.stop_reason == "end_turn":
+            for block in response.content:
+                if hasattr(block, "text"):
+                    final_reply = block.text
             break
 
-        # execute tool call
-        tool_results = []
-        for fc in tool_calls_in_response:
-            tool_name = fc.name
-            tool_args = dict(fc.args) if fc.args else {}
-            tool_calls_made.append(tool_name)
+        # If Claude wants to use tools
+        if response.stop_reason == "tool_use":
+            tool_results = []
 
-            result = await execute_tool(tool_name, tool_args)
+            for block in response.content:
+                if block.type == "tool_use":
+                    tool_name = block.name
+                    tool_args = block.input
+                    tool_calls_made.append(tool_name)
 
-            # check for emergency flag
-            if tool_name == "flag_emergency" and result.get("emergency"):
-                emergency = True
-                emergency_reason = result.get("reason", "")
+                    result = await execute_tool(tool_name, tool_args)
 
-            tool_results.append(
-                genai.protos.Part(
-                    function_response=genai.protos.FunctionResponse(
-                        name=tool_name,
-                        response={"result": json.dumps(result)},
-                    )
-                )
-            )
+                    # Check for emergency
+                    if tool_name == "flag_emergency" and result.get("emergency"):
+                        emergency = True
+                        emergency_reason = result.get("reason", "")
 
-        # send tool results back to the model
-        current_message = tool_results
+                    tool_results.append({
+                        "type": "tool_result",
+                        "tool_use_id": block.id,
+                        "content": json.dumps(result),
+                    })
 
-    # build updated history to return to the client
-    # stored as dicts for JSON serialization
+            # Send tool results back
+            messages.append({"role": "user", "content": tool_results})
+
+    # Build updated history (strip system internals, keep text only)
     updated_history = []
-    for msg in chat.history:
-        parts = []
-        for part in msg.parts:
-            if hasattr(part, "text") and part.text:
-                parts.append({"text": part.text})
-        if parts:
-            updated_history.append({"role": msg.role, "parts": parts})
+    for msg in messages:
+        if isinstance(msg["content"], str):
+            updated_history.append({"role": msg["role"], "parts": [{"text": msg["content"]}]})
+        elif isinstance(msg["content"], list):
+            texts = [b.text for b in msg["content"] if hasattr(b, "text") and b.text]
+            if texts:
+                updated_history.append({"role": msg["role"], "parts": [{"text": t} for t in texts]})
 
     return final_reply, updated_history, emergency, emergency_reason, tool_calls_made
