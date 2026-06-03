@@ -13,6 +13,7 @@ An AI-powered health assistant that looks up real drug and medical data, handles
 - 🚨 **Emergency detection** — flags life-threatening symptoms and shows a prominent alert
 - 🧠 **Long conversation memory** — summarizes older context to stay within token limits
 - 🛠️ **Agentic tool use** — Claude decides when to call tools based on the conversation
+- 🔌 **Provider abstraction** — swap AI models (Claude, Gemini, GPT) by changing one line
 
 ---
 
@@ -25,8 +26,8 @@ Go to [console.anthropic.com](https://console.anthropic.com) and add credits. $5
 ### 2. Clone & install
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/health-navigator.git
-cd health-navigator
+git clone https://github.com/Ritvik2512/personal-health-navigator.git
+cd personal-health-navigator
 
 cd backend
 python -m venv venv
@@ -55,22 +56,38 @@ Open `http://localhost:8000` — the frontend is served from FastAPI.
 ## Project Structure
 
 ```
-health-navigator/
+personal-health-navigator/
 ├── backend/
-│   ├── main.py          # FastAPI routes + static file serving
-│   ├── agent.py         # Claude agent loop with tool use
-│   ├── memory.py        # Sliding window + summarization
-│   ├── tools.py         # Tool definitions for Claude
-│   ├── medical_apis.py  # OpenFDA + MedlinePlus wrappers
-│   ├── prompts.py       # System prompt + safety rules
-│   ├── models.py        # Pydantic schemas
+│   ├── main.py            # FastAPI routes + static file serving
+│   ├── agent.py           # Core agent loop (model-agnostic)
+│   ├── llm_provider.py    # Provider abstraction — all SDK-specific code lives here
+│   ├── memory.py          # Sliding window + summarization (model-agnostic)
+│   ├── tools.py           # Tool definitions in neutral format (model-agnostic)
+│   ├── medical_apis.py    # OpenFDA + MedlinePlus wrappers
+│   ├── prompts.py         # System prompt + safety rules
+│   ├── models.py          # Pydantic schemas
 │   └── requirements.txt
 ├── frontend/
-│   ├── index.html       # Chat UI
-│   └── app.js           # Frontend logic
-├── railway.toml         # Deployment config
+│   ├── index.html         # Chat UI
+│   └── app.js             # Frontend logic
+├── railway.toml           # Deployment config
 └── .env.example
 ```
+
+---
+
+## Switching AI Models
+
+All SDK-specific code is isolated in `llm_provider.py`. To switch models, change one line:
+
+```python
+# llm_provider.py
+def get_provider():
+    return ClaudeProvider()   # currently using Claude
+    # return GeminiProvider() # swap to Gemini
+```
+
+`tools.py`, `memory.py`, and `agent.py` require zero changes.
 
 ---
 
@@ -93,7 +110,7 @@ health-navigator/
 
 ---
 
-## Disclaimer
+## ⚠️ Disclaimer
 
 This tool is for **informational purposes only**. It is not a substitute for professional medical advice, diagnosis, or treatment. Always consult a qualified healthcare provider for medical concerns.
 
