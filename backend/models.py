@@ -3,8 +3,8 @@ from typing import List, Dict, Any, Optional
 
 
 class Message(BaseModel):
-    role: str           # "user" or "model"
-    parts: List[Dict[str, Any]]
+    role: str
+    content: str
 
 
 class ChatRequest(BaseModel):
