@@ -54,23 +54,20 @@ Open `http://localhost:8000`
 ---
 
 ## Project Structure
-personal-health-navigator/
-├── backend/
-│   ├── main.py            # FastAPI routes + static file serving
-│   ├── agent.py           # Core agent loop (model-agnostic)
-│   ├── llm_provider.py    # Provider abstraction — swap models here
-│   ├── memory.py          # Two-layer memory: patient context + sliding window
-│   ├── tools.py           # Tool definitions in neutral format
-│   ├── medical_apis.py    # OpenFDA + MedlinePlus wrappers
-│   ├── prompts.py         # System prompt + safety rules
-│   ├── models.py          # Pydantic schemas
-│   ├── database.py        # SQLite session + history persistence
-│   └── requirements.txt
-├── frontend/
-│   ├── index.html         # Chat UI
-│   └── app.js             # Frontend logic
-├── railway.toml           # Deployment config
-└── .env.example
+**Backend**
+- `main.py` — FastAPI routes + static file serving
+- `agent.py` — Core agent loop (model-agnostic)
+- `llm_provider.py` — Provider abstraction, swap models here
+- `memory.py` — Two-layer memory: patient context + sliding window
+- `tools.py` — Tool definitions in neutral format
+- `medical_apis.py` — OpenFDA + MedlinePlus wrappers
+- `prompts.py` — System prompt + safety rules
+- `models.py` — Pydantic schemas
+- `database.py` — SQLite session + history persistence
+
+**Frontend**
+- `index.html` — Chat UI
+- `app.js` — Frontend logic
 ---
 
 ## Memory Architecture
