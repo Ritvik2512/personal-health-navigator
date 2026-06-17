@@ -13,10 +13,7 @@ An AI-powered health assistant that looks up real drug and medical data, handles
 - 🚨 **Emergency detection** — flags life-threatening symptoms and shows a prominent alert
 - 🧠 **Long conversation memory** — summarizes older context to stay within token limits
 - 🛠️ **Agentic tool use** — Claude decides when to call tools based on the conversation
-<<<<<<< HEAD
 - 🔌 **Provider abstraction** — swap AI models (Claude, Gemini, GPT) by changing one line
-=======
->>>>>>> 859eb1c (refactor: provider abstraction, model-agnostic tools and memory)
 
 ---
 
@@ -29,13 +26,8 @@ Go to [console.anthropic.com](https://console.anthropic.com) and add credits. $5
 ### 2. Clone & install
 
 ```bash
-<<<<<<< HEAD
 git clone https://github.com/Ritvik2512/personal-health-navigator.git
 cd personal-health-navigator
-=======
-git clone https://github.com/YOUR_USERNAME/health-navigator.git
-cd health-navigator
->>>>>>> 859eb1c (refactor: provider abstraction, model-agnostic tools and memory)
 
 cd backend
 python -m venv venv
@@ -64,7 +56,6 @@ Open `http://localhost:8000` — the frontend is served from FastAPI.
 ## Project Structure
 
 ```
-<<<<<<< HEAD
 personal-health-navigator/
 ├── backend/
 │   ├── main.py            # FastAPI routes + static file serving
@@ -80,28 +71,11 @@ personal-health-navigator/
 │   ├── index.html         # Chat UI
 │   └── app.js             # Frontend logic
 ├── railway.toml           # Deployment config
-=======
-health-navigator/
-├── backend/
-│   ├── main.py          # FastAPI routes + static file serving
-│   ├── agent.py         # Claude agent loop with tool use
-│   ├── memory.py        # Sliding window + summarization
-│   ├── tools.py         # Tool definitions for Claude
-│   ├── medical_apis.py  # OpenFDA + MedlinePlus wrappers
-│   ├── prompts.py       # System prompt + safety rules
-│   ├── models.py        # Pydantic schemas
-│   └── requirements.txt
-├── frontend/
-│   ├── index.html       # Chat UI
-│   └── app.js           # Frontend logic
-├── railway.toml         # Deployment config
->>>>>>> 859eb1c (refactor: provider abstraction, model-agnostic tools and memory)
+
 └── .env.example
 ```
 
 ---
-
-<<<<<<< HEAD
 ## Switching AI Models
 
 All SDK-specific code is isolated in `llm_provider.py`. To switch models, change one line:
@@ -116,9 +90,6 @@ def get_provider():
 `tools.py`, `memory.py`, and `agent.py` require zero changes.
 
 ---
-
-=======
->>>>>>> 859eb1c (refactor: provider abstraction, model-agnostic tools and memory)
 ## Milestones
 
 - [x] M1 — Basic chat UI working with Claude
@@ -142,8 +113,4 @@ def get_provider():
 
 This tool is for **informational purposes only**. It is not a substitute for professional medical advice, diagnosis, or treatment. Always consult a qualified healthcare provider for medical concerns.
 
-<<<<<<< HEAD
 In an emergency, call **112** (India) or go to your nearest emergency room.
-=======
-In an emergency, call **112** (India) or **911** (US) or go to your nearest emergency room.
->>>>>>> 859eb1c (refactor: provider abstraction, model-agnostic tools and memory)
