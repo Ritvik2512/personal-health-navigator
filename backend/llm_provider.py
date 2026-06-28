@@ -154,7 +154,11 @@ class ClaudeProvider:
             "tool_calls": tool_calls,
             "done": response.stop_reason == "end_turn",
             "_raw_content": response.content,
-        }
+            "_usage": {
+                "input_tokens": response.usage.input_tokens,
+                "output_tokens": response.usage.output_tokens,
+            },
+        }      
 
 
 def get_provider():

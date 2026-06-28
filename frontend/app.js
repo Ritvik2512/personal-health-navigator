@@ -14,16 +14,16 @@ if (!sessionId) {
 let userCountry = localStorage.getItem("userCountry") || null;
 
 const EMERGENCY_NUMBERS = {
-  "india":     [{ label: "112", href: "tel:112" }, { label: "1066 Ambulance", href: "tel:1066" }],
-  "usa":       [{ label: "911", href: "tel:911" }],
-  "uk":        [{ label: "999", href: "tel:999" }, { label: "112", href: "tel:112" }],
+  "india": [{ label: "112", href: "tel:112" }, { label: "1066 Ambulance", href: "tel:1066" }],
+  "usa": [{ label: "911", href: "tel:911" }],
+  "uk": [{ label: "999", href: "tel:999" }, { label: "112", href: "tel:112" }],
   "australia": [{ label: "000", href: "tel:000" }],
-  "canada":    [{ label: "911", href: "tel:911" }],
-  "default":   [{ label: "112 (Intl)", href: "tel:112" }, { label: "911 (US)", href: "tel:911" }],
+  "canada": [{ label: "911", href: "tel:911" }],
+  "default": [{ label: "112 (Intl)", href: "tel:112" }, { label: "911 (US)", href: "tel:911" }],
 };
 
 const TOOL_SOURCES = {
-  lookup_drug:      { label: "OpenFDA",           url: "https://open.fda.gov" },
+  lookup_drug: { label: "OpenFDA", url: "https://open.fda.gov" },
   search_condition: { label: "MedlinePlus · NIH", url: "https://medlineplus.gov" },
 };
 
@@ -107,7 +107,7 @@ function appendMsg(role, text, toolCalls = []) {
       const src = document.createElement("div");
       src.className = "source";
       src.innerHTML = "Sources: " + srcs.map(s =>
-        `<span class="source-pill">${s.label}</span> <a href="${s.url}" target="_blank" rel="noopener">↗ ${s.url.replace("https://","")}</a>`
+        `<span class="source-pill">${s.label}</span> <a href="${s.url}" target="_blank" rel="noopener">↗ ${s.url.replace("https://", "")}</a>`
       ).join(" · ");
       bub.appendChild(src);
     }
@@ -204,7 +204,18 @@ async function sendMessage() {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || `Error ${res.status}`);
+      let msg = "Something went wrong. Please try again.";
+      if (typeof err.detail === "string") {
+        msg = err.detail;
+      } else if (Array.isArray(err.detail)) {
+        msg = err.detail.map(e => e.msg).join(", ");
+      }
+      removeTyping();
+      appendMsg("assistant", msg);
+      isLoading = false;
+      sendBtn.disabled = false;
+      getUserInput().focus();
+      return;
     }
 
     const data = await res.json();
@@ -216,7 +227,7 @@ async function sendMessage() {
 
   } catch (err) {
     removeTyping();
-    appendMsg("assistant", `Something went wrong: ${err.message}. Please try again.`);
+    appendMsg("assistant", `Something went wrong: ${err.message}.`);
     console.error(err);
   } finally {
     isLoading = false;

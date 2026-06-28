@@ -1,7 +1,7 @@
 import sqlite3
 import json
 import os
-from datetime import datetime
+from datetime import datetime, date
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "health_navigator.db")
 
@@ -30,6 +30,16 @@ def init_db():
                 content TEXT,
                 created_at TEXT,
                 FOREIGN KEY (session_id) REFERENCES sessions(session_id)
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS api_usage (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_id TEXT,
+                input_tokens INTEGER,
+                output_tokens INTEGER,
+                cost REAL,
+                created_at TEXT
             )
         """)
         conn.commit()
@@ -81,3 +91,45 @@ def save_session(session_id: str, patient_context: dict, new_messages: list):
             )
 
         conn.commit()
+
+
+def log_usage(session_id: str, input_tokens: int, output_tokens: int):
+    cost = (input_tokens * 0.00000025) + (output_tokens * 0.00000125)
+    now = datetime.utcnow().isoformat()
+    with get_connection() as conn:
+        conn.execute(
+            "INSERT INTO api_usage (session_id, input_tokens, output_tokens, cost, created_at) VALUES (?, ?, ?, ?, ?)",
+            (session_id, input_tokens, output_tokens, cost, now)
+        )
+        conn.commit()
+    return cost
+
+
+def get_daily_usage() -> dict:
+    today = date.today().isoformat()
+    with get_connection() as conn:
+        row = conn.execute("""
+            SELECT
+                COUNT(*) as total_requests,
+                COALESCE(SUM(input_tokens), 0) as input_tokens,
+                COALESCE(SUM(output_tokens), 0) as output_tokens,
+                COALESCE(SUM(cost), 0) as estimated_cost_usd
+            FROM api_usage
+            WHERE 1=1
+        """).fetchone()
+
+    cost = row["estimated_cost_usd"]
+    budget = 5.0
+
+    return {
+        "date": today,
+        "total_requests": row["total_requests"],
+        "input_tokens": row["input_tokens"],
+        "output_tokens": row["output_tokens"],
+        "estimated_cost_usd": round(cost, 4),
+        "budget_remaining_usd": round(budget - cost, 4),
+    }
+
+
+def get_daily_cost() -> float:
+    return get_daily_usage()["estimated_cost_usd"]

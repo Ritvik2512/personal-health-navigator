@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Any
 
 from prompts import SYSTEM_PROMPT
 from tools import TOOL_DEFINITIONS, execute_tool
@@ -14,7 +14,7 @@ async def run_agent(
     user_message: str,
     raw_history: List[Dict],
     patient_context: Dict,
-) -> Tuple[str, List[Dict], Dict, bool, str, List[str]]:
+) -> Tuple[str, List[Dict], Dict, bool, str, List[str], Any]:
     """
     Main agent loop.
 
@@ -27,7 +27,7 @@ async def run_agent(
         - tool_calls_made
     """
     provider = get_provider()
-
+    usage = None
     # Layer 1: extract any new patient facts from this message
     patient_context = await extract_context_from_message(
         user_message, patient_context, provider
@@ -47,6 +47,7 @@ async def run_agent(
     emergency_reason = ""
     tool_calls_made = []
     final_reply = ""
+    
 
     max_iterations = 5
 
@@ -56,6 +57,9 @@ async def run_agent(
             system=system,
             tools=TOOL_DEFINITIONS,
         )
+
+        if "_usage" in result:
+            usage = result["_usage"]
 
         if result["done"]:
             final_reply = result["text"] or "I'm not sure how to respond to that."
@@ -104,4 +108,4 @@ async def run_agent(
         if isinstance(msg.get("content"), str) and msg["content"]:
             updated_history.append({"role": msg["role"], "content": msg["content"]})
 
-    return final_reply, updated_history, patient_context, emergency, emergency_reason, tool_calls_made
+    return final_reply, updated_history, patient_context, emergency, emergency_reason, tool_calls_made, usage
