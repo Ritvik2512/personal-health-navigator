@@ -11,9 +11,12 @@ An AI-powered health assistant that looks up real drug and medical data, remembe
 - 💊 **Real drug data** — looks up FDA-approved drug info (side effects, warnings, interactions)
 - 🔍 **Symptom guidance** — searches MedlinePlus for reliable condition information
 - 🚨 **Emergency detection** — flags life-threatening symptoms with location-aware emergency numbers
-- 🧠 **Persistent memory** — remembers your allergies, medications, and conditions across sessions
+- 🧠 **Persistent memory** — remembers allergies, medications, and conditions across sessions
 - 💾 **Session history** — full conversation history saved to SQLite, survives browser restarts
 - 🔌 **Provider abstraction** — swap Claude for Gemini or GPT by changing one line
+- 🛡️ **Rate limiting** — 10 requests per minute per session
+- 💰 **Cost protection** — daily budget cap with token usage tracking
+- ✅ **Input validation** — rejects messages over 2000 characters before hitting the API
 
 ---
 
@@ -54,20 +57,22 @@ Open `http://localhost:8000`
 ---
 
 ## Project Structure
+
 **Backend**
-- `main.py` — FastAPI routes + static file serving
+- `main.py` — FastAPI routes, rate limiting, budget checks, static file serving
 - `agent.py` — Core agent loop (model-agnostic)
 - `llm_provider.py` — Provider abstraction, swap models here
-- `memory.py` — Two-layer memory: patient context + sliding window
+- `memory.py` — Two-layer memory: patient context + sliding window summarization
 - `tools.py` — Tool definitions in neutral format
-- `medical_apis.py` — OpenFDA + MedlinePlus wrappers
+- `medical_apis.py` — OpenFDA + MedlinePlus wrappers with error handling
 - `prompts.py` — System prompt + safety rules
-- `models.py` — Pydantic schemas
-- `database.py` — SQLite session + history persistence
+- `models.py` — Pydantic schemas with input validation
+- `database.py` — SQLite: session persistence, history, API usage tracking
 
 **Frontend**
 - `index.html` — Chat UI
 - `app.js` — Frontend logic
+
 ---
 
 ## Memory Architecture
@@ -77,6 +82,26 @@ Two-layer system:
 **Layer 1 — Patient context:** allergies, medications, conditions, age. Extracted automatically from conversation and injected into every prompt. Never summarized away.
 
 **Layer 2 — Sliding window:** conversation history with summarization when it gets long. Keeps context efficient without losing flow.
+
+---
+
+## Cost Protection
+
+- Token usage logged per request to SQLite
+- Daily budget cap: $5 (configurable in `main.py`)
+- Haiku pricing: $0.25/1M input tokens, $1.25/1M output tokens
+- Check live usage at `/admin/usage`
+
+```json
+{
+  "date": "2026-06-23",
+  "total_requests": 19,
+  "input_tokens": 50379,
+  "output_tokens": 5910,
+  "estimated_cost_usd": 0.02,
+  "budget_remaining_usd": 4.98
+}
+```
 
 ---
 
